@@ -4,25 +4,44 @@ var scanner = new Instascan.Scanner({
   mirror: false 
 });
 
-// Modify your existing scan listener to make an HTTP POST request to your backend server
 scanner.addListener('scan', function(content) {
-  document.getElementById('scannedContent').innerText = "Scanned: " + content;
-
-  // Make an HTTP POST request to your backend server
-  fetch('http://localhost:3000/scan', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ content: content })
-  })
-  .then(response => response.json())
-  .then(data => {
-    // Display the scanned data on the screen
-    console.log(data); // Log the scanned data to the console
-    // Here you can manipulate the DOM to display the scanned data as needed
-  })
-  .catch(error => console.error('Error scanning QR code:', error));
+  document.getElementById('scannedContent').innerText = content;
+  // Fetch user info from JSON based on the scanned content (ID)
+  fetchUserInfo(content);
 });
 
+Instascan.Camera.getCameras().then(function(cameras) {
+  if (cameras.length > 0) {
+     scanner.start(cameras.length > 1 ? cameras[1] : cameras[0]);
+  } else {
+    console.error('No cameras found.');
+    alert('No cameras found.');
+  }
+}).catch(function(e) {
+  console.error(e);
+  alert(e);
+});
 
+function fetchUserInfo(userID) {
+  // Fetch data from your JSON file
+  fetch('Dummy_Users.json')
+    .then(response => response.json())
+    .then(data => {
+      // Find the user info based on the provided userID
+      const user = data.find(user => user._id.$oid === userID);
+      if (user) {
+        // Display user info
+        document.getElementById('userInfo').innerHTML = `
+          <p>User ID: ${user._id.$oid}</p>
+          <p>Name: ${user.name}</p>
+          <p>College: ${user.college}</p>
+          <p>College Roll No: ${user.collegeRollNo}</p>
+          <p>Scanned: ${user.scanned ? 'Yes' : 'No'}</p>
+        `;
+      } else {
+        // Display message if user not found
+        document.getElementById('userInfo').innerText = 'User not found';
+      }
+    })
+    .catch(error => console.error('Error fetching user info:', error));
+}
